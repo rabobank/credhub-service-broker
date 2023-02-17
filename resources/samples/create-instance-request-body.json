@@ -1,0 +1,17 @@
+{
+  "service_id": "template-service-guid",
+  "plan_id": "small-plan-guid",
+  "organization_guid": "4f687146-698b-462f-81dd-87311f399993",
+  "space_guid": "a8f69fbc-b153-4f71-b90b-28fb2fe66e35",
+  "context": {
+    "platform": "cloudfoundry",
+    "organization_guid": "4f687146-698b-462f-81dd-87311f399993",
+    "space_guid": "a8f69fbc-b153-4f71-b90b-28fb2fe66e35",
+    "organization_name": "org-name",
+    "space_name": "space-name",
+    "instance_name": "myWonderfullService"
+  },
+  "parameters": {
+    "parm1": "value-of-parm1"
+  }
+}

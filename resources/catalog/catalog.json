@@ -1,0 +1,31 @@
+{
+  "services": [
+    {
+      "name": "credhub",
+      "id": "386ffa90-5304-4e4e-bcae-d6fea30c5eaf",
+      "description": "Store credentials in credhub and provide secure access for applications",
+      "requires": [],
+      "tags": [],
+      "bindable": true,
+      "metadata": {
+        "shareable": true,
+        "longDescription": "This broker requires you to use the -c option on the cf create-service-instance. It will store the data provided with the -c into credhub. An app that is bound to the service instance will then have secure access to these credentials",
+        "displayName": "Credhub Service Broker",
+        "documentationUrl": "url-where-to-find-more-documentation"
+      },
+      "maximum_polling_duration": 7200,
+      "plan_updateable": false,
+      "plans": [
+        {
+          "name": "default",
+          "id": "c32f3aef-2c74-4694-b5d8-1c3ca07632c3",
+          "description": "the one and only plan",
+          "metadata": {
+            "cost": 0,
+            "bullets": []
+          }
+        }
+      ]
+    }
+  ]
+}

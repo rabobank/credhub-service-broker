@@ -1,0 +1,20 @@
+{
+  "service_id": "5001dcf7-48df-4d32-a756-1a18a45846b5",
+  "plan_id": "micro-plan-guid",
+  "app_guid": "ff2576f2-d00f-41f8-9692-4952342b5001",
+  "bind_resource": {
+    "app_guid": "ff2576f2-d00f-41f8-9692-4952342b5001",
+    "space_guid": "a8f69fbc-b153-4f71-b90b-28fb2fe66e35"
+  },
+  "context": {
+    "platform": "cloudfoundry",
+    "organization_guid": "4f687146-698b-462f-81dd-87311f399993",
+    "space_guid": "a8f69fbc-b153-4f71-b90b-28fb2fe66e35",
+    "organization_name": "system",
+    "space_name": "panzer"
+  },
+  "parameters": {
+    "name1": "value1",
+    "name2": "value2"
+  }
+}
