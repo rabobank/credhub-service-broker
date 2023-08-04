@@ -2,25 +2,33 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+
 	"github.com/gorilla/mux"
 	"github.com/rabobank/credhub-service-broker/conf"
 	"github.com/rabobank/credhub-service-broker/controllers"
-	"net/http"
-	"os"
+	"github.com/rabobank/credhub-service-broker/security"
 )
 
 func StartServer() {
 	router := mux.NewRouter()
 
 	router.Use(controllers.DebugMiddleware)
-	router.Use(controllers.BasicAuthMiddleware)
+	// oauth2 interceptor. It will only handle /api endpoints
+	router.Use(security.MatchPrefix("/health").AuthenticateWith(security.Anonymous).
+		MatchPrefix("/api").AuthenticateWith(security.UAA).
+		Default(security.BasicAuth).Build())
 	router.Use(controllers.AuditLogMiddleware)
 
+	// service broker endpoints
 	router.HandleFunc("/v2/catalog", controllers.Catalog).Methods("GET")
 	router.HandleFunc("/v2/service_instances/{service_instance_guid}", controllers.CreateOrUpdateServiceInstance).Methods("PUT", "PATCH")
 	router.HandleFunc("/v2/service_instances/{service_instance_guid}", controllers.DeleteServiceInstance).Methods("DELETE")
 	router.HandleFunc("/v2/service_instances/{service_instance_guid}/service_bindings/{service_binding_guid}", controllers.CreateServiceBinding).Methods("PUT")
 	router.HandleFunc("/v2/service_instances/{service_instance_guid}/service_bindings/{service_binding_guid}", controllers.DeleteServiceBinding).Methods("DELETE")
+
+	// key management api endpoints
 
 	http.Handle("/", router)
 
