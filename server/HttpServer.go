@@ -9,7 +9,14 @@ import (
 	"github.com/rabobank/credhub-service-broker/conf"
 	"github.com/rabobank/credhub-service-broker/controllers"
 	"github.com/rabobank/credhub-service-broker/security"
+	"github.com/rabobank/credhub-service-broker/util"
 )
+
+var HealthStatus = struct{ Status string }{"UP"}
+
+func Health(w http.ResponseWriter, _ *http.Request) {
+	util.WriteHttpResponse(w, http.StatusOK, HealthStatus)
+}
 
 func StartServer() {
 	router := mux.NewRouter()
@@ -27,6 +34,9 @@ func StartServer() {
 	router.HandleFunc("/v2/service_instances/{service_instance_guid}", controllers.DeleteServiceInstance).Methods("DELETE")
 	router.HandleFunc("/v2/service_instances/{service_instance_guid}/service_bindings/{service_binding_guid}", controllers.CreateServiceBinding).Methods("PUT")
 	router.HandleFunc("/v2/service_instances/{service_instance_guid}/service_bindings/{service_binding_guid}", controllers.DeleteServiceBinding).Methods("DELETE")
+
+	// health endpoint
+	router.HandleFunc("/health", Health).Methods("GET")
 
 	// key management api endpoints
 
