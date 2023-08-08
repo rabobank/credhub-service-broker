@@ -2,12 +2,21 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/rabobank/credhub-service-broker/credhub"
 	"github.com/rabobank/credhub-service-broker/model"
 	"github.com/rabobank/credhub-service-broker/util"
-	"net/http"
 )
+
+type Credentials string
+
+func (c Credentials) ServiceInstanceId(serviceInstanceId string) string {
+	return fmt.Sprintf(string(c), serviceInstanceId)
+}
+
+const credentialsPath = Credentials("/pcsb/%s/credentials")
 
 func CreateServiceBinding(w http.ResponseWriter, r *http.Request) {
 	var err error
@@ -19,7 +28,8 @@ func CreateServiceBinding(w http.ResponseWriter, r *http.Request) {
 		util.WriteHttpResponse(w, http.StatusBadRequest, model.BrokerError{Error: "FAILED", Description: err.Error(), InstanceUsable: false, UpdateRepeatable: false})
 		return
 	}
-	credhubPath := fmt.Sprintf("/pcsb/%s/credentials", serviceInstanceId)
+	credhubPath := credentialsPath.ServiceInstanceId(serviceInstanceId)
+
 	fmt.Printf("create service binding id %s for service instance id %s, creating path %s...\n", serviceBindingId, serviceInstanceId, credhubPath)
 	err = credhub.CreateCredhubPermission(model.CredhubPermissionRequest{Path: credhubPath, Actor: fmt.Sprintf("mtls-app:%s", serviceBinding.AppGuid), Operations: []string{"read"}})
 	if err != nil {
@@ -50,7 +60,7 @@ func DeleteServiceBinding(w http.ResponseWriter, r *http.Request) {
 		util.WriteHttpResponse(w, http.StatusOK, model.BrokerError{Error: "FAILED", Description: fmt.Sprintf("credhub entry %s was not found or was not readable", credhubPath), InstanceUsable: false, UpdateRepeatable: false})
 		return
 	}
-	path := fmt.Sprintf("/pcsb/%s/credentials", serviceInstanceId)
+	path := credentialsPath.ServiceInstanceId(serviceInstanceId)
 	actor := fmt.Sprintf("mtls-app:%s", credhubEntry.Data[0].Value)
 	credhubPerm, err := credhub.GetCredhubPermission(path, actor)
 	err = credhub.DeleteCredhubPermission(credhubPerm.UUID)

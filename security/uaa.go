@@ -47,8 +47,11 @@ func UAA(request *http.Request) (bool, *string) {
 			fmt.Printf("[AUTH] User %s trying to use an invalid token\n", tokenIntrospection.UserName)
 			return false, nil
 		}
-		if authentication, isType := request.Context().Value("authentication").(map[string]string); isType {
+		if authentication, isType := request.Context().Value("authentication").(map[string]interface{}); isType {
 			authentication["user"] = tokenIntrospection.UserName
+		} else {
+			fmt.Println("authentication object in context is not a map")
+			return false, nil
 		}
 
 		// let's see if there's a service instance id to authroize the user
