@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -125,14 +126,15 @@ func (r *HttpRequest) Do(method string) ([]byte, error) {
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusBadRequest {
-		return nil, errors.New("failed request")
-	}
-
-	body, e := io.ReadAll(response.Body)
+	body, _ := io.ReadAll(response.Body)
 	if e != nil {
 		return nil, e
 	}
+
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusBadRequest {
+		return nil, errors.New(fmt.Sprintf("Error response code %d: %s", response.StatusCode, string(body)))
+	}
+
 	return body, nil
 }
 
@@ -143,14 +145,15 @@ func (r *HttpRequest) DoWithClient(client *http.Client, method string) ([]byte, 
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusBadRequest {
-		return nil, errors.New("failed request")
-	}
-
-	body, e := io.ReadAll(response.Body)
+	body, _ := io.ReadAll(response.Body)
 	if e != nil {
 		return nil, e
 	}
+
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusBadRequest {
+		return nil, errors.New(fmt.Sprintf("Error response code %d: %s", response.StatusCode, string(body)))
+	}
+
 	return body, nil
 }
 

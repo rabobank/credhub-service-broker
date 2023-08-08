@@ -39,6 +39,7 @@ func StartServer() {
 	router.HandleFunc("/health", Health).Methods("GET")
 
 	// key management api endpoints
+	router.HandleFunc("/api/{service_instance_guid}/keys", Health).Methods("GET")
 
 	http.Handle("/", router)
 

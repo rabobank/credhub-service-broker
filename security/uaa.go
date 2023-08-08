@@ -35,16 +35,16 @@ func UAA(request *http.Request) (bool, *string) {
 			WithHeader("Content-Type", "application/x-www-form-urlencoded").
 			PostContentWithClient(api.Client, ([]byte)("token="+token))
 		if e != nil {
-			fmt.Printf("[AUTH] Error while validating client token :\n%v\n", e)
+			fmt.Printf("[AUTH] Error while validating client token: %v\n", e)
 			return false, nil
 		}
 		var tokenIntrospection model.UaaTokenIntrospection
 		if e = json.Unmarshal(body, &tokenIntrospection); e != nil {
-			fmt.Printf("Failed to introspect token:\n%v\n", e)
+			fmt.Printf("Failed to introspect token: %v\n", e)
 			return false, nil
 		}
 		if !tokenIntrospection.Active {
-			fmt.Printf("[AUTH] User %s trying to use an invalid token", tokenIntrospection.UserName)
+			fmt.Printf("[AUTH] User %s trying to use an invalid token\n", tokenIntrospection.UserName)
 			return false, nil
 		}
 		if authentication, isType := request.Context().Value("authentication").(map[string]string); isType {
@@ -57,14 +57,14 @@ func UAA(request *http.Request) (bool, *string) {
 		} else {
 			body, e = httpHelper.
 				Request(fmt.Sprintf(PermissionsUrl, conf.CfApiURL, serviceInstanceId)).
-				WithAuthorization(token).
+				WithBearerToken(token).
 				Get()
 			if e != nil {
-				fmt.Printf("Error while trying to check permissions of user %s for service %s:\n%v\n", tokenIntrospection.UserName, serviceInstanceId, e)
+				fmt.Printf("Error while trying to check permissions of user %s for service %s: %v\n", tokenIntrospection.UserName, serviceInstanceId, e)
 			} else {
 				var permissions model.CfServiceInstancePermissions
 				if e = json.Unmarshal(body, &permissions); e != nil {
-					fmt.Printf("Unable to check user %s permissions for service %s:\n%v\n", tokenIntrospection.UserName, serviceInstanceId, e)
+					fmt.Printf("Unable to check user %s permissions for service %s: %v\n", tokenIntrospection.UserName, serviceInstanceId, e)
 				} else if permissions.Manage {
 					return true, nil
 				} else {
@@ -72,6 +72,8 @@ func UAA(request *http.Request) (bool, *string) {
 				}
 			}
 		}
+	} else {
+		fmt.Println("No bearer token provided")
 	}
 
 	return false, nil
