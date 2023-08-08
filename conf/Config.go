@@ -1,11 +1,15 @@
 package conf
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/rabobank/credhub-service-broker/model"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/cloudfoundry-community/go-cfenv"
+	"github.com/rabobank/credhub-service-broker/httpHelper"
+	"github.com/rabobank/credhub-service-broker/model"
 )
 
 var (
@@ -27,6 +31,7 @@ var (
 	CatalogDir           = os.Getenv("CSB_CATALOG_DIR")
 	ListenPortStr        = os.Getenv("CSB_LISTEN_PORT")
 	CfApiURL             = os.Getenv("CSB_CFAPI_URL")
+	UaaApiURL            = os.Getenv("CSB_UAA_URL")
 	SkipSslValidationStr = os.Getenv("CSB_SKIP_SSL_VALIDATION")
 	SkipSslValidation    bool
 	CredhubCredsPath     = os.Getenv("CREDHUB_CREDS_PATH") // something like /credhub-service-broker/config
@@ -36,6 +41,11 @@ const BasicAuthRealm = "PCSB Panzer Credhub Service Broker"
 
 // EnvironmentComplete - Check for required environment variables and exit if not all are there.
 func EnvironmentComplete() {
+	app, e := cfenv.Current()
+	if e != nil {
+		fmt.Printf("Not running in a CF environment")
+	}
+
 	envComplete := true
 	if debugStr == "true" {
 		Debug = true
@@ -79,8 +89,31 @@ func EnvironmentComplete() {
 		fmt.Println("missing envvar: CREDHUB_CREDS_PATH")
 	}
 	if CfApiURL == "" {
-		envComplete = false
-		fmt.Println("missing envvar: CSB_CFAPI_URL")
+		if app != nil {
+			fmt.Printf("CF API Url not provided, defaulting to cf environment url : %s\n", app.CFAPI)
+			CfApiURL = app.CFAPI
+			fmt.Println("CF API endpoint:", CfApiURL)
+		} else {
+			envComplete = false
+			fmt.Println("missing envvar: CSB_CFAPI_URL")
+		}
+	}
+
+	if UaaApiURL == "" {
+		fmt.Println("UAA url not provided. Inferring it from CF API")
+		if content, e := httpHelper.Request(CfApiURL).Accepting("application/json").Get(); e != nil {
+			fmt.Println("Unable to get CF API endpoints:", e)
+			envComplete = false
+		} else {
+			var endpoints model.CfApiEndpoints
+			if e = json.Unmarshal(content, &endpoints); e != nil {
+				fmt.Println("Unable to unmarshal CF API endpoints:", e)
+				envComplete = false
+			} else {
+				UaaApiURL = endpoints.Links.Uaa.Href
+				fmt.Println("UAA endpoint:", UaaApiURL)
+			}
+		}
 	}
 
 	if strings.EqualFold(SkipSslValidationStr, "true") {

@@ -1,11 +1,10 @@
-package util
+package httpHelper
 
 import (
 	"bytes"
 	"crypto/tls"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -90,7 +89,16 @@ func (r *HttpRequest) WithContent(content []byte) *HttpRequest {
 	return r
 }
 
-func (r *HttpRequest) DoWithResponse(method string) (*http.Response, error) {
+func (r *HttpRequest) DoReturningResponse(method string) (*http.Response, error) {
+	client := &http.Client{}
+	if r.tlsOptions != nil {
+		client.Transport = &http.Transport{TLSClientConfig: r.tlsOptions}
+	}
+
+	return r.DoWithClientReturningResponse(client, method)
+}
+
+func (r *HttpRequest) DoWithClientReturningResponse(client *http.Client, method string) (*http.Response, error) {
 	if r.e != nil {
 		return nil, r.e
 	}
@@ -98,11 +106,6 @@ func (r *HttpRequest) DoWithResponse(method string) (*http.Response, error) {
 	request, e := http.NewRequest(method, r.url, r.content)
 	if e != nil {
 		return nil, e
-	}
-
-	client := http.Client{}
-	if r.tlsOptions != nil {
-		client.Transport = &http.Transport{TLSClientConfig: r.tlsOptions}
 	}
 
 	request.Header = r.header
@@ -116,7 +119,7 @@ func (r *HttpRequest) DoWithResponse(method string) (*http.Response, error) {
 }
 
 func (r *HttpRequest) Do(method string) ([]byte, error) {
-	response, e := r.DoWithResponse(method)
+	response, e := r.DoReturningResponse(method)
 	if e != nil {
 		return nil, e
 	}
@@ -126,11 +129,33 @@ func (r *HttpRequest) Do(method string) ([]byte, error) {
 		return nil, errors.New("failed request")
 	}
 
-	body, e := ioutil.ReadAll(response.Body)
+	body, e := io.ReadAll(response.Body)
 	if e != nil {
 		return nil, e
 	}
 	return body, nil
+}
+
+func (r *HttpRequest) DoWithClient(client *http.Client, method string) ([]byte, error) {
+	response, e := r.DoWithClientReturningResponse(client, method)
+	if e != nil {
+		return nil, e
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusBadRequest {
+		return nil, errors.New("failed request")
+	}
+
+	body, e := io.ReadAll(response.Body)
+	if e != nil {
+		return nil, e
+	}
+	return body, nil
+}
+
+func (r *HttpRequest) GetWithClient(client *http.Client) ([]byte, error) {
+	return r.DoWithClient(client, http.MethodGet)
 }
 
 func (r *HttpRequest) Get() ([]byte, error) {
@@ -144,6 +169,11 @@ func (r *HttpRequest) Post() ([]byte, error) {
 func (r *HttpRequest) PostContent(content []byte) ([]byte, error) {
 	r.content = bytes.NewReader(content)
 	return r.Do(http.MethodPost)
+}
+
+func (r *HttpRequest) PostContentWithClient(client *http.Client, content []byte) ([]byte, error) {
+	r.content = bytes.NewReader(content)
+	return r.DoWithClient(client, http.MethodPost)
 }
 
 func (r *HttpRequest) Delete() ([]byte, error) {

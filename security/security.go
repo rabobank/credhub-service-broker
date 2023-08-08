@@ -1,6 +1,7 @@
 package security
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -12,6 +13,8 @@ func Initialize() {
 	basicChallenge = `Basic realm="` + conf.BasicAuthRealm + `"`
 	basicCredentials.username = conf.BrokerUser
 	basicCredentials.password = conf.BrokerPassword
+
+	initializeUaa()
 }
 
 func MatchPrefix(pathPrefix string) MatchBuilder {
@@ -43,6 +46,7 @@ func Middleware(authenticators []authenticatorMatchers) mux.MiddlewareFunc {
 			for _, authenticator := range authenticators {
 				for _, prefix := range authenticator.matchers {
 					if strings.HasPrefix(request.URL.Path, prefix) {
+						request = request.WithContext(context.WithValue(request.Context(), "authentication", make(map[string]interface{})))
 						authorized, challenge = authenticator.authenticate(request)
 						break check
 					}
