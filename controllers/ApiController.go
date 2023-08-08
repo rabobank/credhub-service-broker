@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/rabobank/credhub-service-broker/credhub"
@@ -59,6 +60,37 @@ func updateMap(originalMap map[string]interface{}, updatedValues map[string]inte
 	}
 }
 
+func deleteKey(credentials map[string]interface{}, parts []string) bool {
+	if value, isFound := credentials[parts[0]]; isFound {
+		if len(parts) > 1 {
+			// the key has more parts, let's check if it's a map
+			if subMap, isMap := value.(map[string]interface{}); isMap {
+				return deleteKey(subMap, parts[1:])
+			}
+		} else {
+			delete(credentials, parts[0])
+			return true
+		}
+	}
+	return false
+}
+
+func deleteKeys(credentials map[string]interface{}, keysToDelete []string) ([]string, bool) {
+	var ignoredKeys []string
+	var deletedKeys bool
+	for _, k := range keysToDelete {
+		keyParts := strings.Split(k, ".")
+		if len(keyParts) == 0 {
+			ignoredKeys = append(ignoredKeys, k)
+		} else if !deleteKey(credentials, keyParts) {
+			ignoredKeys = append(ignoredKeys, k)
+		} else {
+			deletedKeys = true
+		}
+	}
+	return ignoredKeys, deletedKeys
+}
+
 func ListServiceKeys(w http.ResponseWriter, r *http.Request) {
 	if username, serviceInstanceId, ok := userAndService(w, r); ok {
 		fmt.Printf("[API] %s updating keys of service %s\n", username, serviceInstanceId)
@@ -110,7 +142,38 @@ func UpdateServiceKeys(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteServiceKeys(w http.ResponseWriter, r *http.Request) {
-}
+	if username, serviceInstanceId, ok := userAndService(w, r); ok {
+		fmt.Printf("[API] %s deleting keys from service %s\n", username, serviceInstanceId)
+		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId)); e != nil {
+			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
+		} else if len(data.Data) == 0 {
+			fmt.Printf("[API] %s trying to list keys for non-existing credhub service %s\n", username, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusNotFound, "Not Found")
+		} else if credentials, isType := data.Data[0].Value.(map[string]interface{}); isType {
+			keysToDelete := make([]string, 0)
+			if e = util.ProvisionObjectFromRequest(r, &keysToDelete); e != nil {
+				fmt.Printf("Error when processing provided deleting array: %v\n", e)
+				util.WriteHttpResponse(w, http.StatusBadRequest, "Unable to process json array")
+			} else {
+				ignoredKeys, keysHaveBeenDeleted := deleteKeys(credentials, keysToDelete)
+				response := struct{ IgnoredKeys []string }{ignoredKeys}
 
-func GetServiceHistory(w http.ResponseWriter, r *http.Request) {
+				if keysHaveBeenDeleted {
+					if e = credhub.SetCredhubJson(model.CredhubJsonRequest{Type: "json", Name: credentialsPath.ServiceInstanceId(serviceInstanceId), Value: credentials}); e != nil {
+						fmt.Printf("Failed to submit credentials update to credhub: %v\n", e)
+						util.WriteHttpResponse(w, http.StatusInternalServerError, "Failed to update service")
+					} else {
+						fmt.Printf("[API] %s has deleted keys from service %s credentials\n", username, serviceInstanceId)
+						util.WriteHttpResponse(w, http.StatusAccepted, response)
+					}
+				} else {
+					util.WriteHttpResponse(w, http.StatusNotFound, response)
+				}
+			}
+		} else {
+			fmt.Printf("credentials for service %s do not have a json object map as a value\n", serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusBadRequest, "credentials are not a json object")
+		}
+	}
 }
