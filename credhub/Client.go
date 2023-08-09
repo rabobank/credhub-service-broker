@@ -7,17 +7,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/cloudfoundry-community/go-uaa"
 	"github.com/rabobank/credhub-service-broker/conf"
 	"github.com/rabobank/credhub-service-broker/model"
 	"github.com/rabobank/credhub-service-broker/util"
 	"golang.org/x/oauth2"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 )
 
 var (
@@ -86,7 +86,7 @@ func GetCredhubData(credhubPath string) (model.CredhubEntry, error) {
 		resp, err = client.Do(req)
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 			defer resp.Body.Close()
-			body, _ := ioutil.ReadAll(resp.Body)
+			body, _ := io.ReadAll(resp.Body)
 			if err = json.Unmarshal(body, &credhubEntry); err != nil {
 				return credhubEntry, errors.New(fmt.Sprintf("cannot unmarshal JSON response from %s: %s\n", conf.CredhubURL+path, err))
 			}

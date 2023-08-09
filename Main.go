@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/rabobank/credhub-service-broker/conf"
 	"github.com/rabobank/credhub-service-broker/credhub"
+	"github.com/rabobank/credhub-service-broker/security"
 	"github.com/rabobank/credhub-service-broker/server"
 	"github.com/rabobank/credhub-service-broker/util"
-	"os"
 )
 
 func main() {
@@ -16,6 +18,8 @@ func main() {
 	conf.EnvironmentComplete()
 
 	util.ResolveCredhubCredentials()
+
+	security.Initialize()
 
 	initialize()
 

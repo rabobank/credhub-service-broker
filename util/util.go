@@ -7,15 +7,16 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudfoundry-community/go-cfclient"
-	"github.com/rabobank/credhub-service-broker/conf"
-	"github.com/rabobank/credhub-service-broker/model"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/cloudfoundry-community/go-cfclient"
+	"github.com/rabobank/credhub-service-broker/conf"
+	"github.com/rabobank/credhub-service-broker/model"
 )
 
 const (
@@ -107,7 +108,7 @@ func DumpRequest(r *http.Request) {
 }
 
 func ProvisionObjectFromRequest(r *http.Request, object interface{}) error {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		fmt.Printf("failed to read json object from request, error: %s\n", err)
 		return err
@@ -133,7 +134,7 @@ func ResolveCredhubCredentials() {
 		log.Fatal("failed to parse the keypair from the app-container", err)
 	}
 	// Create a HTTPS client and supply the (created CA pool and) certificate
-	//client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: caCertPool, Certificates: []tls.Certificate{cert}}}}
+	// client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: caCertPool, Certificates: []tls.Certificate{cert}}}}
 	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: conf.SkipSslValidation}}}
 
 	// Do the actual mTLS http request
@@ -160,7 +161,7 @@ func ResolveCredhubCredentials() {
 	}
 
 	// Print the response body to stdout
-	//fmt.Printf("response from credhub (DEBUG, REMOVE): \n%s\n", body)
+	// fmt.Printf("response from credhub (DEBUG, REMOVE): \n%s\n", body)
 
 	// parse the response into the model we expect:
 	var credhubResponse model.CSBCredentials
