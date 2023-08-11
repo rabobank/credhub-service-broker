@@ -168,7 +168,7 @@ func DeleteServiceKeys(w http.ResponseWriter, r *http.Request) {
 						util.WriteHttpResponse(w, http.StatusAccepted, response)
 					}
 				} else {
-					util.WriteHttpResponse(w, http.StatusNotFound, response)
+					util.WriteHttpResponse(w, http.StatusNotModified, response)
 				}
 			}
 		} else {
