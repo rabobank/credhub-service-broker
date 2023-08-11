@@ -65,7 +65,12 @@ func deleteKey(credentials map[string]interface{}, parts []string) bool {
 		if len(parts) > 1 {
 			// the key has more parts, let's check if it's a map
 			if subMap, isMap := value.(map[string]interface{}); isMap {
-				return deleteKey(subMap, parts[1:])
+				if deleteKey(subMap, parts[1:]) {
+					if len(subMap) == 0 {
+						delete(credentials, parts[0])
+					}
+					return true
+				}
 			}
 		} else {
 			delete(credentials, parts[0])
@@ -93,12 +98,12 @@ func deleteKeys(credentials map[string]interface{}, keysToDelete []string) ([]st
 
 func ListServiceKeys(w http.ResponseWriter, r *http.Request) {
 	if username, serviceInstanceId, ok := userAndService(w, r); ok {
-		fmt.Printf("[API] %s updating keys of service %s\n", username, serviceInstanceId)
-		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId)); e != nil {
+		fmt.Printf("[API] %s Listing keys of service %s\n", username, serviceInstanceId)
+		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 0); e != nil {
 			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
 		} else if len(data.Data) == 0 {
-			fmt.Printf("[API] %s trying to update keys for non-existing credhub service %s\n", username, serviceInstanceId)
+			fmt.Printf("[API] %s trying to list keys for non-existing credhub service %s\n", username, serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusNotFound, "Not Found")
 		} else if credentials, isType := data.Data[0].Value.(map[string]interface{}); isType {
 			keys := listMapKeys(credentials, nil, "")
@@ -110,14 +115,46 @@ func ListServiceKeys(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ListServiceVersions(w http.ResponseWriter, r *http.Request) {
+	if username, serviceInstanceId, ok := userAndService(w, r); ok {
+		fmt.Printf("[API] %s listing credential versions for service %s\n", username, serviceInstanceId)
+		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 20); e != nil {
+			fmt.Printf("Unable to get service %s versions, deeming it a bad request.\n", serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
+		} else if len(data.Data) == 0 {
+			fmt.Printf("[API] %s trying to list versions for non-existing credhub service %s\n", username, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusNotFound, "Not Found")
+		} else {
+			versions := make([]model.SecretsVersionKeys, 0)
+			for _, entry := range data.Data {
+				if credentials, isType := entry.Value.(map[string]interface{}); isType {
+					versions = append(versions, model.SecretsVersionKeys{
+						VersionCreatedAt: entry.VersionCreatedAt,
+						ID:               entry.ID,
+						Keys:             listMapKeys(credentials, nil, ""),
+					})
+				} else {
+					fmt.Printf("version %s from service %s is not a json map object. Skipping it.\n", entry.ID, serviceInstanceId)
+				}
+			}
+
+			if len(versions) > 0 {
+				util.WriteHttpResponse(w, http.StatusOK, versions)
+			} else {
+				util.WriteHttpResponse(w, http.StatusNotFound, "credentials don't have any valid versions")
+			}
+		}
+	}
+}
+
 func UpdateServiceKeys(w http.ResponseWriter, r *http.Request) {
 	if username, serviceInstanceId, ok := userAndService(w, r); ok {
 		fmt.Printf("[API] %s updating keys of service %s\n", username, serviceInstanceId)
-		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId)); e != nil {
+		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 0); e != nil {
 			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
 		} else if len(data.Data) == 0 {
-			fmt.Printf("[API] %s trying to list keys for non-existing credhub service %s\n", username, serviceInstanceId)
+			fmt.Printf("[API] %s trying to update keys for non-existing credhub service %s\n", username, serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusNotFound, "Not Found")
 		} else if credentials, isType := data.Data[0].Value.(map[string]interface{}); isType {
 			updatedValues := make(map[string]interface{})
@@ -144,7 +181,7 @@ func UpdateServiceKeys(w http.ResponseWriter, r *http.Request) {
 func DeleteServiceKeys(w http.ResponseWriter, r *http.Request) {
 	if username, serviceInstanceId, ok := userAndService(w, r); ok {
 		fmt.Printf("[API] %s deleting keys from service %s\n", username, serviceInstanceId)
-		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId)); e != nil {
+		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 0); e != nil {
 			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
 		} else if len(data.Data) == 0 {
@@ -157,7 +194,7 @@ func DeleteServiceKeys(w http.ResponseWriter, r *http.Request) {
 				util.WriteHttpResponse(w, http.StatusBadRequest, "Unable to process json array")
 			} else {
 				ignoredKeys, keysHaveBeenDeleted := deleteKeys(credentials, keysToDelete)
-				response := struct{ IgnoredKeys []string }{ignoredKeys}
+				response := model.DeleteResponse{IgnoredKeys: ignoredKeys}
 
 				if keysHaveBeenDeleted {
 					if e = credhub.SetCredhubJson(model.CredhubJsonRequest{Type: "json", Name: credentialsPath.ServiceInstanceId(serviceInstanceId), Value: credentials}); e != nil {
@@ -168,12 +205,42 @@ func DeleteServiceKeys(w http.ResponseWriter, r *http.Request) {
 						util.WriteHttpResponse(w, http.StatusAccepted, response)
 					}
 				} else {
-					util.WriteHttpResponse(w, http.StatusNotFound, response)
+					util.WriteHttpResponse(w, http.StatusNotModified, response)
 				}
 			}
 		} else {
 			fmt.Printf("credentials for service %s do not have a json object map as a value\n", serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusBadRequest, "credentials are not a json object")
+		}
+	}
+}
+
+func ReinstateServiceVersion(w http.ResponseWriter, r *http.Request) {
+	if username, serviceInstanceId, ok := userAndService(w, r); ok {
+		versionId := mux.Vars(r)["version_id"]
+		fmt.Printf("[API] %s reinstating credential version %s for service %s\n", username, versionId, serviceInstanceId)
+
+		if data, e := credhub.GetCredhubDataVersion(versionId); e != nil {
+			fmt.Printf("Unable to get version %s, deeming it a bad request: %v\n", versionId, e)
+			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
+		} else if !strings.HasPrefix(data.Name, credentialsPath.ServiceInstanceId(serviceInstanceId)) {
+			fmt.Printf("[API] %s trying to reinstate a version to service %s from another service.\n", username, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
+		} else if currentData, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 0); e != nil {
+			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
+		} else if len(currentData.Data) == 0 {
+			fmt.Printf("[API] %s trying to reinstate a version for a non-existing credhub service %s\n", username, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusNotFound, "Not Found")
+		} else if currentData.Data[0].ID == versionId {
+			fmt.Printf("Credentials version %s being reinstated for service %s is already the current one", versionId, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusNotModified, "Unmodified")
+		} else if e = credhub.SetCredhubJson(model.CredhubJsonRequest{Type: "json", Name: credentialsPath.ServiceInstanceId(serviceInstanceId), Value: data.Value.(map[string]interface{})}); e != nil {
+			fmt.Printf("Failed to submit credentials update to credhub: %v\n", e)
+			util.WriteHttpResponse(w, http.StatusInternalServerError, "Failed to update service")
+		} else {
+			fmt.Printf("[API] %s has updated credentials in service %s\n", username, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusAccepted, "Credentials Updated")
 		}
 	}
 }
