@@ -209,3 +209,33 @@ func DeleteServiceKeys(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+func ReinstateServiceVersion(w http.ResponseWriter, r *http.Request) {
+	if username, serviceInstanceId, ok := userAndService(w, r); ok {
+		versionId := mux.Vars(r)["version_id"]
+		fmt.Printf("[API] %s reinstating credential version %s for service %s\n", username, versionId, serviceInstanceId)
+
+		if data, e := credhub.GetCredhubDataVersion(versionId); e != nil {
+			fmt.Printf("Unable to get version %s, deeming it a bad request: %v\n", versionId, e)
+			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
+		} else if !strings.HasPrefix(data.Name, credentialsPath.ServiceInstanceId(serviceInstanceId)) {
+			fmt.Printf("[API] %s trying to reinstate a version to service %s from another service.\n", username, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
+		} else if currentData, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 0); e != nil {
+			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
+		} else if len(currentData.Data) == 0 {
+			fmt.Printf("[API] %s trying to reinstate a version for a non-existing credhub service %s\n", username, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusNotFound, "Not Found")
+		} else if currentData.Data[0].ID == versionId {
+			fmt.Printf("Credentials version %s being reinstated for service %s is already the current one", versionId, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusNotModified, "Unmodified")
+		} else if e = credhub.SetCredhubJson(model.CredhubJsonRequest{Type: "json", Name: credentialsPath.ServiceInstanceId(serviceInstanceId), Value: data.Value.(map[string]interface{})}); e != nil {
+			fmt.Printf("Failed to submit credentials update to credhub: %v\n", e)
+			util.WriteHttpResponse(w, http.StatusInternalServerError, "Failed to update service")
+		} else {
+			fmt.Printf("[API] %s has updated credentials in service %s\n", username, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusAccepted, "Credentials Updated")
+		}
+	}
+}

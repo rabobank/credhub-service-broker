@@ -99,6 +99,25 @@ func GetCredhubData(credhubPath string, versions int) (model.CredhubEntry, error
 	return credhubEntry, err
 }
 
+func GetCredhubDataVersion(version string) (model.CredhubDataResponse, error) {
+	var err error
+	var credhubData model.CredhubDataResponse
+	var resp *http.Response
+	path := fmt.Sprintf("/api/v1/data/%s", version)
+	client, req, err := getHttpClientAndRequest(http.MethodGet, path, nil)
+	if err == nil {
+		resp, err = client.Do(req)
+		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+			if err = json.Unmarshal(body, &credhubData); err != nil {
+				return credhubData, errors.New(fmt.Sprintf("cannot unmarshal JSON response from %s: %s\n", conf.CredhubURL+path, err))
+			}
+		}
+	}
+	return credhubData, err
+}
+
 func DeleteCredhubData(credhubPath string) error {
 	var err error
 	var resp *http.Response

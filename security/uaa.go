@@ -54,7 +54,7 @@ func UAA(request *http.Request) (bool, *string) {
 			return false, nil
 		}
 
-		// let's see if there's a service instance id to authroize the user
+		// let's see if there's a service instance id to authorize the user
 		if serviceInstanceId, found := mux.Vars(request)["service_instance_guid"]; !found {
 			fmt.Printf("[AUTH] Invalid endpoint requested by %s: %s\n", tokenIntrospection.UserName, request.URL.Path)
 		} else {
