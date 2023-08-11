@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/rabobank/credhub-service-broker/conf"
 	"github.com/rabobank/credhub-service-broker/credhub"
 	"github.com/rabobank/credhub-service-broker/model"
 	"github.com/rabobank/credhub-service-broker/util"
-	"net/http"
 )
 
 func Catalog(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +46,7 @@ func CreateOrUpdateServiceInstance(w http.ResponseWriter, r *http.Request) {
 func DeleteServiceInstance(w http.ResponseWriter, r *http.Request) {
 	serviceInstanceId := mux.Vars(r)["service_instance_guid"]
 	fmt.Printf("delete service instance %s...\n", serviceInstanceId)
-	_, err := credhub.GetCredhubData(fmt.Sprintf("/pcsb/%s/credentials", serviceInstanceId))
+	_, err := credhub.GetCredhubData(fmt.Sprintf("/pcsb/%s/credentials", serviceInstanceId), 0)
 	if err != nil {
 		util.WriteHttpResponse(w, http.StatusGone, err)
 		return

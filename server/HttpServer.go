@@ -42,6 +42,7 @@ func StartServer() {
 	router.HandleFunc("/api/{service_instance_guid}/keys", controllers.ListServiceKeys).Methods("GET")
 	router.HandleFunc("/api/{service_instance_guid}/keys", controllers.UpdateServiceKeys).Methods("PUT")
 	router.HandleFunc("/api/{service_instance_guid}/keys", controllers.DeleteServiceKeys).Methods("DELETE")
+	router.HandleFunc("/api/{service_instance_guid}/versions", controllers.ListServiceVersions).Methods("GET")
 
 	http.Handle("/", router)
 

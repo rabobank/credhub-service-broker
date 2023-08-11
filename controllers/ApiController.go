@@ -94,7 +94,7 @@ func deleteKeys(credentials map[string]interface{}, keysToDelete []string) ([]st
 func ListServiceKeys(w http.ResponseWriter, r *http.Request) {
 	if username, serviceInstanceId, ok := userAndService(w, r); ok {
 		fmt.Printf("[API] %s Listing keys of service %s\n", username, serviceInstanceId)
-		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId)); e != nil {
+		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 0); e != nil {
 			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
 		} else if len(data.Data) == 0 {
@@ -110,10 +110,42 @@ func ListServiceKeys(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ListServiceVersions(w http.ResponseWriter, r *http.Request) {
+	if username, serviceInstanceId, ok := userAndService(w, r); ok {
+		fmt.Printf("[API] %s listing credential versions for service %s\n", username, serviceInstanceId)
+		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 20); e != nil {
+			fmt.Printf("Unable to get service %s versions, deeming it a bad request.\n", serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
+		} else if len(data.Data) == 0 {
+			fmt.Printf("[API] %s trying to list versions for non-existing credhub service %s\n", username, serviceInstanceId)
+			util.WriteHttpResponse(w, http.StatusNotFound, "Not Found")
+		} else {
+			versions := make([]model.SecretsVersionKeys, 0)
+			for _, entry := range data.Data {
+				if credentials, isType := entry.Value.(map[string]interface{}); isType {
+					versions = append(versions, model.SecretsVersionKeys{
+						VersionCreatedAt: entry.VersionCreatedAt,
+						ID:               entry.ID,
+						Keys:             listMapKeys(credentials, nil, ""),
+					})
+				} else {
+					fmt.Printf("version %s from service %s is not a json map object. Skipping it.\n", entry.ID, serviceInstanceId)
+				}
+			}
+
+			if len(versions) > 0 {
+				util.WriteHttpResponse(w, http.StatusOK, versions)
+			} else {
+				util.WriteHttpResponse(w, http.StatusNotFound, "credentials don't have any valid versions")
+			}
+		}
+	}
+}
+
 func UpdateServiceKeys(w http.ResponseWriter, r *http.Request) {
 	if username, serviceInstanceId, ok := userAndService(w, r); ok {
 		fmt.Printf("[API] %s updating keys of service %s\n", username, serviceInstanceId)
-		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId)); e != nil {
+		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 0); e != nil {
 			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
 		} else if len(data.Data) == 0 {
@@ -144,7 +176,7 @@ func UpdateServiceKeys(w http.ResponseWriter, r *http.Request) {
 func DeleteServiceKeys(w http.ResponseWriter, r *http.Request) {
 	if username, serviceInstanceId, ok := userAndService(w, r); ok {
 		fmt.Printf("[API] %s deleting keys from service %s\n", username, serviceInstanceId)
-		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId)); e != nil {
+		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId), 0); e != nil {
 			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
 		} else if len(data.Data) == 0 {
@@ -157,7 +189,7 @@ func DeleteServiceKeys(w http.ResponseWriter, r *http.Request) {
 				util.WriteHttpResponse(w, http.StatusBadRequest, "Unable to process json array")
 			} else {
 				ignoredKeys, keysHaveBeenDeleted := deleteKeys(credentials, keysToDelete)
-				response := struct{ IgnoredKeys []string }{ignoredKeys}
+				response := model.DeleteResponse{IgnoredKeys: ignoredKeys}
 
 				if keysHaveBeenDeleted {
 					if e = credhub.SetCredhubJson(model.CredhubJsonRequest{Type: "json", Name: credentialsPath.ServiceInstanceId(serviceInstanceId), Value: credentials}); e != nil {

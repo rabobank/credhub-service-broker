@@ -76,11 +76,15 @@ func setCredhub(jsonBytes []byte) error {
 	return err
 }
 
-func GetCredhubData(credhubPath string) (model.CredhubEntry, error) {
+func GetCredhubData(credhubPath string, versions int) (model.CredhubEntry, error) {
 	var err error
 	var credhubEntry model.CredhubEntry
 	var resp *http.Response
-	path := fmt.Sprintf("/api/v1/data?name=%s&current=true", credhubPath)
+	versionsParameter := "current=true"
+	if versions > 1 {
+		versionsParameter = fmt.Sprintf("versions=%d", versions)
+	}
+	path := fmt.Sprintf("/api/v1/data?name=%s&%s", credhubPath, versionsParameter)
 	client, req, err := getHttpClientAndRequest(http.MethodGet, path, nil)
 	if err == nil {
 		resp, err = client.Do(req)

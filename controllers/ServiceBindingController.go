@@ -51,7 +51,7 @@ func DeleteServiceBinding(w http.ResponseWriter, r *http.Request) {
 	serviceBindingId := mux.Vars(r)["service_binding_guid"]
 	fmt.Printf("delete service binding id %s for service instance id %s...\n", serviceBindingId, serviceInstanceId)
 	credhubPath := fmt.Sprintf("/pcsb/%s/%s", serviceInstanceId, serviceBindingId)
-	credhubEntry, err := credhub.GetCredhubData(credhubPath)
+	credhubEntry, err := credhub.GetCredhubData(credhubPath, 0)
 	if err != nil {
 		util.WriteHttpResponse(w, http.StatusOK, model.BrokerError{Error: "FAILED", Description: fmt.Sprintf("failed to read credhub at path %s: %s", credhubPath, err.Error()), InstanceUsable: false, UpdateRepeatable: false})
 		return
