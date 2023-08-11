@@ -93,12 +93,12 @@ func deleteKeys(credentials map[string]interface{}, keysToDelete []string) ([]st
 
 func ListServiceKeys(w http.ResponseWriter, r *http.Request) {
 	if username, serviceInstanceId, ok := userAndService(w, r); ok {
-		fmt.Printf("[API] %s updating keys of service %s\n", username, serviceInstanceId)
+		fmt.Printf("[API] %s Listing keys of service %s\n", username, serviceInstanceId)
 		if data, e := credhub.GetCredhubData(credentialsPath.ServiceInstanceId(serviceInstanceId)); e != nil {
 			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
 		} else if len(data.Data) == 0 {
-			fmt.Printf("[API] %s trying to update keys for non-existing credhub service %s\n", username, serviceInstanceId)
+			fmt.Printf("[API] %s trying to list keys for non-existing credhub service %s\n", username, serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusNotFound, "Not Found")
 		} else if credentials, isType := data.Data[0].Value.(map[string]interface{}); isType {
 			keys := listMapKeys(credentials, nil, "")
@@ -117,7 +117,7 @@ func UpdateServiceKeys(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("Unable to get service %s credentials, deeming it a bad request.\n", serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusBadRequest, nil)
 		} else if len(data.Data) == 0 {
-			fmt.Printf("[API] %s trying to list keys for non-existing credhub service %s\n", username, serviceInstanceId)
+			fmt.Printf("[API] %s trying to update keys for non-existing credhub service %s\n", username, serviceInstanceId)
 			util.WriteHttpResponse(w, http.StatusNotFound, "Not Found")
 		} else if credentials, isType := data.Data[0].Value.(map[string]interface{}); isType {
 			updatedValues := make(map[string]interface{})
