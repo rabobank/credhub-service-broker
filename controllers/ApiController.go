@@ -65,7 +65,12 @@ func deleteKey(credentials map[string]interface{}, parts []string) bool {
 		if len(parts) > 1 {
 			// the key has more parts, let's check if it's a map
 			if subMap, isMap := value.(map[string]interface{}); isMap {
-				return deleteKey(subMap, parts[1:])
+				if deleteKey(subMap, parts[1:]) {
+					if len(subMap) == 0 {
+						delete(credentials, parts[0])
+					}
+					return true
+				}
 			}
 		} else {
 			delete(credentials, parts[0])
