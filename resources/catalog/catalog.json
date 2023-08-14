@@ -11,7 +11,8 @@
         "shareable": true,
         "longDescription": "This broker requires you to use the -c option on the cf create-service-instance. It will store the data provided with the -c into credhub. An app that is bound to the service instance will then have secure access to these credentials",
         "displayName": "Credhub Service Broker",
-        "documentationUrl": "url-where-to-find-more-documentation"
+        "documentationUrl": "url-where-to-find-more-documentation",
+        "secretsApi": "url-where-the-secrets-api-can-be-reached"
       },
       "maximum_polling_duration": 7200,
       "plan_updateable": false,
