@@ -6,7 +6,7 @@ require (
 	github.com/cloudfoundry-community/go-cfclient v0.0.0-20211117203709-9b81b3940cc7
 	github.com/cloudfoundry-community/go-cfenv v1.18.0
 	github.com/cloudfoundry-community/go-uaa v0.3.1
-	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/mux v1.8.1
 	golang.org/x/oauth2 v0.18.0
 )
 
