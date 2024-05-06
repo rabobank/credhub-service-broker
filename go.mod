@@ -7,7 +7,7 @@ require (
 	github.com/cloudfoundry-community/go-cfenv v1.18.0
 	github.com/cloudfoundry-community/go-uaa v0.3.2
 	github.com/gorilla/mux v1.8.1
-	golang.org/x/oauth2 v0.19.0
+	golang.org/x/oauth2 v0.20.0
 )
 
 require (
