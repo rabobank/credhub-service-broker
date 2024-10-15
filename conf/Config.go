@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry-community/go-cfenv"
+	"github.com/cloudfoundry/go-cfclient/v3/client"
+	"github.com/cloudfoundry/go-cfclient/v3/config"
 	"github.com/rabobank/credhub-service-broker/httpHelper"
 	"github.com/rabobank/credhub-service-broker/model"
 )
@@ -35,6 +38,9 @@ var (
 	SkipSslValidationStr = os.Getenv("CSB_SKIP_SSL_VALIDATION")
 	SkipSslValidation    bool
 	CredhubCredsPath     = os.Getenv("CREDHUB_CREDS_PATH") // something like /credhub-service-broker/config
+	CfClient             *client.Client
+	CfConfig             *config.Config
+	CfCtx                = context.Background()
 )
 
 const BasicAuthRealm = "PCSB Panzer Credhub Service Broker"

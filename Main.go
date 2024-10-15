@@ -40,7 +40,7 @@ func initialize() {
 		os.Exit(8)
 	}
 
-	util.Initialize()
+	util.InitCFClient()
 
 	credhub.Initialize()
 

@@ -21,14 +21,12 @@ import (
 )
 
 var (
-	UaaUrl   string
 	uaaToken *oauth2.Token
 	uaac     *uaa.API
 )
 
 func Initialize() {
-	UaaUrl = util.CfClient.Endpoint.TokenEndpoint
-	if client, e := uaa.New(UaaUrl, uaa.WithClientCredentials(conf.ClientId, conf.ClientSecret, uaa.JSONWebToken), uaa.WithSkipSSLValidation(conf.SkipSslValidation)); e == nil {
+	if client, e := uaa.New(conf.CfClient.Config.AuthURL(""), uaa.WithClientCredentials(conf.ClientId, conf.ClientSecret, uaa.JSONWebToken), uaa.WithSkipSSLValidation(conf.SkipSslValidation)); e == nil {
 		uaac = client
 	} else {
 		fmt.Printf("Failed to authenticate with UAA: %v\n", e)

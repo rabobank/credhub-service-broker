@@ -3,53 +3,46 @@ package util
 import (
 	"bufio"
 	"bytes"
-	"crypto/subtle"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudfoundry/go-cfclient/v3/client"
+	"github.com/cloudfoundry/go-cfclient/v3/config"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/cloudfoundry-community/go-cfclient"
 	"github.com/rabobank/credhub-service-broker/conf"
 	"github.com/rabobank/credhub-service-broker/model"
 )
 
 const (
-	cfCertPathEnv        = "CF_INSTANCE_CERT"
-	cfKeyPathEnv         = "CF_INSTANCE_KEY"
-	TokenRefreshInterval = 90
+	cfCertPathEnv = "CF_INSTANCE_CERT"
+	cfKeyPathEnv  = "CF_INSTANCE_KEY"
 )
 
-var CfClient cfclient.Client
-
-func Initialize() {
-	c := &cfclient.Config{ApiAddress: conf.CfApiURL, ClientID: conf.ClientId, ClientSecret: conf.ClientSecret, SkipSslValidation: conf.SkipSslValidation}
-	client, err := cfclient.NewClient(c)
-	if err == nil {
-		CfClient = *client
-		fmt.Printf("cf client initialized with api address %s\n", CfClient.Config.ApiAddress)
-	} else {
-		fmt.Printf("Unable to authenticate with CF: %s\n", err)
-		os.Exit(8)
+func InitCFClient() {
+	var err error
+	if conf.CfConfig, err = config.New(conf.CfApiURL, config.ClientCredentials(conf.ClientId, conf.ClientSecret), config.SkipTLSValidation()); err != nil {
+		log.Fatalf("failed to create new config: %s", err)
 	}
-
-	// refresh the client every hour to get a new refresh token
-	go func() {
-		channel := time.Tick(time.Duration(TokenRefreshInterval) * time.Minute)
-		for range channel {
-			client, err = cfclient.NewClient(c)
-			if err != nil {
-				fmt.Printf("failed to refresh cfclient, error is %s\n", err)
+	if conf.CfClient, err = client.New(conf.CfConfig); err != nil {
+		log.Fatalf("failed to create new client: %s", err)
+	} else {
+		// refresh the client every hour to get a new refresh token
+		go func() {
+			channel := time.Tick(time.Duration(15) * time.Minute)
+			for range channel {
+				conf.CfClient, err = client.New(conf.CfConfig)
+				if err != nil {
+					log.Printf("failed to refresh cfclient, error is %s", err)
+				}
 			}
-			fmt.Println("refreshed cf client, got new token")
-			CfClient = *client
-		}
-	}()
-
+		}()
+	}
+	return
 }
 
 func WriteHttpResponse(w http.ResponseWriter, code int, object interface{}) {
@@ -63,18 +56,6 @@ func WriteHttpResponse(w http.ResponseWriter, code int, object interface{}) {
 	w.WriteHeader(code)
 	_, _ = fmt.Fprintf(w, string(data))
 	fmt.Printf("response: code:%d, body: %s\n", code, string(data))
-}
-
-// BasicAuth validate if user/pass in the http request match the configured service broker user/pass
-func BasicAuth(w http.ResponseWriter, r *http.Request, username, password string) bool {
-	user, pass, ok := r.BasicAuth()
-	if !ok || subtle.ConstantTimeCompare([]byte(user), []byte(username)) != 1 || subtle.ConstantTimeCompare([]byte(pass), []byte(password)) != 1 {
-		w.Header().Set("WWW-Authenticate", `Basic realm="`+conf.BasicAuthRealm+`"`)
-		w.WriteHeader(401)
-		_, _ = w.Write([]byte("Unauthorised.\n"))
-		return false
-	}
-	return true
 }
 
 func DumpRequest(r *http.Request) {
@@ -132,14 +113,14 @@ func ResolveCredhubCredentials() {
 	if err != nil {
 		log.Fatal("failed to parse the keypair from the app-container", err)
 	}
-	// Create a HTTPS client and supply the (created CA pool and) certificate
-	// client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: caCertPool, Certificates: []tls.Certificate{cert}}}}
-	client := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: conf.SkipSslValidation}}}
+	// Create a HTTPS httpClient and supply the (created CA pool and) certificate
+	// httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: caCertPool, Certificates: []tls.Certificate{cert}}}}
+	httpClient := &http.Client{Transport: &http.Transport{TLSClientConfig: &tls.Config{Certificates: []tls.Certificate{cert}, InsecureSkipVerify: conf.SkipSslValidation}}}
 
 	// Do the actual mTLS http request
 	path := fmt.Sprintf("/api/v1/data?name=%s&current=true", conf.CredhubCredsPath)
 	fmt.Printf("trying to get credentials from %s ...\n", conf.CredhubURL+path)
-	resp, err := client.Get(conf.CredhubURL + path)
+	resp, err := httpClient.Get(conf.CredhubURL + path)
 	if err != nil {
 		fmt.Printf("Failed to read the credentials from path %s in credhub: %s\n", conf.CredhubCredsPath, err)
 		os.Exit(8)
