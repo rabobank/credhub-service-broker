@@ -7,20 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/rabobank/credhub-service-broker/conf"
 	"github.com/rabobank/credhub-service-broker/util"
 )
 
 const IdentityHeader = "X-Broker-Api-Originating-Identity"
-
-func BasicAuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if util.BasicAuth(w, r, conf.BrokerUser, conf.BrokerPassword) {
-			// Call the next handler, which can be another middleware in the chain, or the final handler.
-			next.ServeHTTP(w, r)
-		}
-	})
-}
 
 func DebugMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
