@@ -124,7 +124,7 @@ func (r *HttpRequest) Do(method string) ([]byte, error) {
 	if e != nil {
 		return nil, e
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	body, _ := io.ReadAll(response.Body)
 	if e != nil {
@@ -143,7 +143,7 @@ func (r *HttpRequest) DoWithClient(client *http.Client, method string) ([]byte, 
 	if e != nil {
 		return nil, e
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	body, _ := io.ReadAll(response.Body)
 	if e != nil {

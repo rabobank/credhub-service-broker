@@ -153,7 +153,7 @@ func ResolveCredhubCredentials() {
 	fmt.Println("successfully got the credentials from credhub")
 
 	// Read the response body
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("reading response from credhub failed: %s\n", err)

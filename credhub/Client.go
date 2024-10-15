@@ -60,7 +60,7 @@ func setCredhub(jsonBytes []byte) error {
 	if err == nil {
 		resp, err = client.Do(req)
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			body, _ := io.ReadAll(resp.Body)
 			if err = json.Unmarshal(body, &credhubDataResponse); err != nil {
 				return errors.New(fmt.Sprintf("cannot unmarshal JSON response from %s: %s\n", conf.CredhubURL+path, err))
@@ -89,7 +89,7 @@ func GetCredhubData(credhubPath string, versions int) (model.CredhubEntry, error
 	if err == nil {
 		resp, err = client.Do(req)
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			body, _ := io.ReadAll(resp.Body)
 			if err = json.Unmarshal(body, &credhubEntry); err != nil {
 				return credhubEntry, errors.New(fmt.Sprintf("cannot unmarshal JSON response from %s: %s\n", conf.CredhubURL+path, err))
@@ -108,7 +108,7 @@ func GetCredhubDataVersion(version string) (model.CredhubDataResponse, error) {
 	if err == nil {
 		resp, err = client.Do(req)
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			body, _ := io.ReadAll(resp.Body)
 			if err = json.Unmarshal(body, &credhubData); err != nil {
 				return credhubData, errors.New(fmt.Sprintf("cannot unmarshal JSON response from %s: %s\n", conf.CredhubURL+path, err))
@@ -145,7 +145,7 @@ func CreateCredhubPermission(credhubPermission model.CredhubPermissionRequest) e
 	if err == nil {
 		resp, err = client.Do(req)
 		if err == nil && resp != nil && resp.StatusCode == http.StatusCreated {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			body, _ := io.ReadAll(resp.Body)
 			if err = json.Unmarshal(body, &credhubPermissionResponse); err != nil {
 				return errors.New(fmt.Sprintf("Can not unmarshal JSON response from %s: %s\n", conf.CredhubURL+path, err))
@@ -177,7 +177,7 @@ func GetCredhubPermission(credhubPath, actor string) (model.CredhubPermissionRes
 	if err == nil {
 		resp, err = client.Do(req)
 		if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			body, _ := io.ReadAll(resp.Body)
 			if err = json.Unmarshal(body, &credhubPermissionResponse); err != nil {
 				return credhubPermissionResponse, errors.New(fmt.Sprintf("Can not unmarshal JSON response from %s: %s\n", conf.CredhubURL+path, err))
