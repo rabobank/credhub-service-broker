@@ -3,7 +3,7 @@ module github.com/rabobank/credhub-service-broker
 go 1.23
 
 replace (
-	golang.org/x/text => golang.org/x/text v0.18.0
+	golang.org/x/text => golang.org/x/text v0.19.0
 	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -19,7 +19,7 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/net v0.29.0 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
+	golang.org/x/net v0.30.0 // indirect
+	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

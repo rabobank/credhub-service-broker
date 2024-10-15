@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -96,14 +95,14 @@ func DumpRequest(r *http.Request) {
 
 		// dump the request body
 		fmt.Println("dumping request body...")
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			fmt.Printf("Error reading body: %v\n", err)
 		} else {
 			fmt.Println(string(body))
 		}
 		// Restore the io.ReadCloser to it's original state
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
 	}
 }
 
@@ -154,7 +153,7 @@ func ResolveCredhubCredentials() {
 
 	// Read the response body
 	defer func() { _ = resp.Body.Close() }()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("reading response from credhub failed: %s\n", err)
 		os.Exit(8)
