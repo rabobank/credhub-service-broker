@@ -4,7 +4,12 @@ go 1.23.0
 
 toolchain go1.23.3
 
-replace golang.org/x/text => golang.org/x/text v0.22.0
+replace (
+	golang.org/x/crypto => golang.org/x/crypto v0.35.0
+	golang.org/x/net => golang.org/x/net v0.35.0
+	golang.org/x/text => golang.org/x/text v0.22.0
+	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.4.0
+)
 
 require (
 	github.com/cloudfoundry-community/go-cfenv v1.18.0
@@ -25,7 +30,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sys v0.30.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
