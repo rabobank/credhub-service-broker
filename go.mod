@@ -5,6 +5,7 @@ go 1.24
 replace (
 	golang.org/x/net => golang.org/x/net v0.40.0
 	golang.org/x/text => golang.org/x/text v0.25.0
+	gopkg.in/yaml.v2 => gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
