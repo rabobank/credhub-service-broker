@@ -41,7 +41,7 @@ func AuditLogMiddleware(next http.Handler) http.Handler {
 				if words := strings.Split(identityHeader, " "); len(words) == 2 {
 					if decodedString, err := base64.StdEncoding.DecodeString(words[1]); decodedString != nil && err == nil {
 						if err = json.Unmarshal(decodedString, &jsonObject); err == nil {
-							if cfUser, err := conf.CfClient.Users.Get(conf.CfCtx, jsonObject.UserID); err == nil && cfUser != nil {
+							if cfUser, err := conf.CfClient.Users.Get(conf.CfCtx, jsonObject.UserID); err == nil && cfUser != nil && cfUser.Username != nil {
 								origIdentity = *cfUser.Username
 							} else {
 								fmt.Printf("failed to cf lookup user with guid %s: %s\n", jsonObject.UserID, err)
