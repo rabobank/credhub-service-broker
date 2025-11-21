@@ -83,8 +83,8 @@ To be able to talk to the CF runtime Credhub make sure to prepare the following 
 * login to credhub with : ``credhub login -s https://credhub.service.cf.internal:8844 --skip-tls-validation --client-name credhub-service-broker --client-secret <credhub admin secret>``
 
 The broker has the envvar `CREDHUB_CREDS_PATH` which points to an entry in the CF runtime credhub where the following 2 credentials should be stored:
-* CSB_BROKER_PASSWORD - The password for the broker (should be specified when issuing the _cf create-service-broker_ cmd).
-* CSB_CLIENT_SECRET - The password for CSB_CLIENT_ID
+* `CSB_BROKER_PASSWORD` - The password for the broker (should be specified when issuing the _cf create-service-broker_ cmd).
+* `CSB_CLIENT_SECRET` - The password for `CSB_CLIENT_ID´
 
 To create the proper credhub entry in the CF runtime credhub, use the following sample command: 
 ```
