@@ -68,7 +68,7 @@ func UAA(request *http.Request) (bool, *string) {
 				var permissions model.CfServiceInstancePermissions
 				if e = json.Unmarshal(body, &permissions); e != nil {
 					fmt.Printf("Unable to check user %s permissions for service %s: %v\n", tokenIntrospection.UserName, serviceInstanceId, e)
-				} else if permissions.Manage {
+				} else if permissions.Manage || permissions.Read && request.Method == "GET" {
 					return true, nil
 				} else {
 					fmt.Printf("[AUTH] User %s has no permissions to manage requested service %s\n", tokenIntrospection.UserName, serviceInstanceId)
