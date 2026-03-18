@@ -60,34 +60,41 @@ func updateMap(originalMap map[string]interface{}, updatedValues map[string]inte
 	}
 }
 
-func deleteKey(credentials map[string]interface{}, parts []string) bool {
-	if value, isFound := credentials[parts[0]]; isFound {
-		if len(parts) > 1 {
-			// the key has more parts, let's check if it's a map
-			if subMap, isMap := value.(map[string]interface{}); isMap {
-				if deleteKey(subMap, parts[1:]) {
+func deleteKey(credentials map[string]interface{}, key string) bool {
+	if _, isFound := credentials[key]; isFound {
+		delete(credentials, key)
+		return true
+	}
+
+	keySuffix := key
+	keyPrefix := ""
+	cutPoint := -1
+	for {
+		idx := strings.Index(keySuffix, ".")
+		if idx == -1 {
+			return false
+		}
+		cutPoint = cutPoint + idx + 1
+		keyPrefix = key[:cutPoint]
+		keySuffix = keySuffix[idx+1:]
+		if value, isFound := credentials[keyPrefix]; isFound {
+			if subMap, isMap := value.(map[string]any); isMap {
+				if deleteKey(subMap, keySuffix) {
 					if len(subMap) == 0 {
-						delete(credentials, parts[0])
+						delete(credentials, keyPrefix)
 					}
 					return true
 				}
 			}
-		} else {
-			delete(credentials, parts[0])
-			return true
 		}
 	}
-	return false
 }
 
 func deleteKeys(credentials map[string]interface{}, keysToDelete []string) ([]string, bool) {
 	var ignoredKeys []string
 	var deletedKeys bool
 	for _, k := range keysToDelete {
-		keyParts := strings.Split(k, ".")
-		if len(keyParts) == 0 {
-			ignoredKeys = append(ignoredKeys, k)
-		} else if !deleteKey(credentials, keyParts) {
+		if !deleteKey(credentials, k) {
 			ignoredKeys = append(ignoredKeys, k)
 		} else {
 			deletedKeys = true
