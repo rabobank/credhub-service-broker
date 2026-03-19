@@ -209,11 +209,11 @@ func DeleteServiceKeys(w http.ResponseWriter, r *http.Request) {
 						util.WriteHttpResponse(w, http.StatusInternalServerError, "Failed to update service")
 					} else {
 						fmt.Printf("[API] %s has deleted keys from service %s credentials\n", username, serviceInstanceId)
-						util.WriteHttpResponse(w, http.StatusAccepted, response)
 					}
 				} else {
-					util.WriteHttpResponse(w, http.StatusNotModified, response)
+					fmt.Printf("[API] %s ignored all keys to deleted from service %s credentials\n", username, serviceInstanceId)
 				}
+				util.WriteHttpResponse(w, http.StatusAccepted, response)
 			}
 		} else {
 			fmt.Printf("credentials for service %s do not have a json object map as a value\n", serviceInstanceId)
