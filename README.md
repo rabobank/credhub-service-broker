@@ -148,7 +148,7 @@ cf enable-service-access pcsb-service
 
 When creating a service instance you need provide a configuration via the `-c` flag. This can either be inline or the path to a json formatted file. 
 
-For example you can prepare a json file similar to this:
+For example, you can prepare a json file similar to this:
 
 ```
 example_creds_config.json
