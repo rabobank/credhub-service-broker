@@ -3,13 +3,13 @@ module github.com/rabobank/credhub-service-broker
 go 1.26.0
 
 replace (
-	golang.org/x/net => golang.org/x/net v0.59.0
-	golang.org/x/text => golang.org/x/text v0.42.0
+	golang.org/x/net => golang.org/x/net v0.61.0
+	golang.org/x/text => golang.org/x/text v0.43.0
 )
 
 require (
 	github.com/cloudfoundry-community/go-cfenv v1.24.4
-	github.com/cloudfoundry-community/go-uaa v0.5.0
+	github.com/cloudfoundry-community/go-uaa v0.5.1
 	github.com/cloudfoundry/go-cfclient/v3 v3.0.0-beta.1
 	github.com/gorilla/mux v1.8.1
 	golang.org/x/oauth2 v0.37.0
@@ -24,6 +24,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.12.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/net v0.59.0 // indirect
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/net v0.61.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 )
