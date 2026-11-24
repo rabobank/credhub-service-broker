@@ -82,7 +82,7 @@ func DumpRequest(r *http.Request) {
 		} else {
 			fmt.Println(string(body))
 		}
-		// Restore the io.ReadCloser to it's original state
+		// Restore the io.ReadCloser to its original state
 		r.Body = io.NopCloser(bytes.NewBuffer(body))
 	}
 }
@@ -127,7 +127,7 @@ func ResolveCredhubCredentials() {
 	}
 	if resp != nil && resp.StatusCode != http.StatusOK {
 		respText, _ := LinesFromReader(resp.Body)
-		fmt.Printf("failed to to get credentials from credhub, response code %d, response: %s", resp.StatusCode, *respText)
+		fmt.Printf("failed to get credentials from credhub, response code %d, response: %s", resp.StatusCode, *respText)
 		os.Exit(8)
 	}
 	fmt.Println("successfully got the credentials from credhub")
